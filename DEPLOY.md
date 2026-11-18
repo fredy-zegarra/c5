@@ -39,8 +39,8 @@ git push -u origin main
 
 ## 4. Primer ingreso
 
-1. Abre la dirección que te da Vercel (`https://arequipa-c5-xxxx.vercel.app`).
-2. Ingresa con `ADMIN_EMAIL` y `ADMIN_PASSWORD`. Las tablas y el administrador se crean solos.
+1. Abre la dirección del proyecto: **https://c5fz.vercel.app**. Sin sesión verás el modo demostración con emergencias simuladas.
+2. Pulsa **Iniciar sesión** (abajo a la izquierda) e ingresa con `ADMIN_EMAIL` y `ADMIN_PASSWORD`. Las tablas y el administrador se crean solos.
 3. En **Usuarios** crea las cuentas del personal. En **Unidades** registra los vehículos.
 4. Para cada efectivo de campo crea un usuario con rol «Unidad de campo» vinculado a su unidad; desde su celular entra a la misma dirección.
 

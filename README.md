@@ -16,7 +16,20 @@ Frontend y backend van en un solo proyecto Next.js, listo para Vercel.
 | Auditoría | Registro de cada acción con usuario, fecha e IP |
 | Usuarios | Roles: administrador, supervisor, operador, unidad de campo |
 
-Todos los datos son los que tu personal registra. El sistema no trae datos de ejemplo ni simulados.
+En producción: **https://c5fz.vercel.app**
+
+### Modo demostración
+
+Al abrir la aplicación sin iniciar sesión se muestra Operaciones con emergencias, unidades y cámaras simuladas (códigos `SIM-…`).
+
+- Puedes registrar incidentes, despachar unidades, marcarlas en camino o en sitio, cerrar, cancelar y anotar en la bitácora.
+- Las unidades simuladas reportan posición y las que van en camino se acercan al incidente.
+- Todo se guarda solo en el almacenamiento local de ese navegador. Nada llega a la base de datos ni a los servicios de emergencia.
+- Mientras la página está cerrada, el tiempo de la simulación se pausa.
+- **Reiniciar demo** borra lo que agregaste y restaura los ejemplos.
+- Los demás módulos (Historial, Unidades, Cámaras, Estadísticas, Auditoría, Usuarios) usan datos reales y piden **Iniciar sesión**.
+
+Con una sesión iniciada, la consola usa los datos reales. Las API siguen exigiendo sesión, así que el modo demostración no expone ningún dato real.
 
 ## Lo que NO incluye (requiere convenios o equipos externos)
 
@@ -39,12 +52,11 @@ Todos los datos son los que tu personal registra. El sistema no trae datos de ej
 Necesitas Node.js 20 o superior.
 
 ```
-copy .env.example .env.local     (edita ADMIN_EMAIL, ADMIN_PASSWORD y SESSION_SECRET)
 npm install
 npm run dev
 ```
 
-Abre http://localhost:3000 e ingresa con ADMIN_EMAIL y ADMIN_PASSWORD.
+Abre http://localhost:3000 para ver el modo demo sin iniciar sesión. Para usar la consola con datos reales, copia `.env.example` a `.env.local`, configura ADMIN_EMAIL, ADMIN_PASSWORD y SESSION_SECRET, y luego ingresa con esas credenciales.
 
 ## Subir a Vercel
 

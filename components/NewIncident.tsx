@@ -14,9 +14,12 @@ const DEFAULT_PRIORITY: Record<string, number> = {
   "Huaico, inundación o desastre": 1, "Otro": 3,
 };
 
-export default function NewIncident({ pick, setPick, onDone, onCancel }: {
+export default function NewIncident({ pick, setPick, onDone, onCancel, demoCreate }: {
   pick: Pt | null; setPick: (p: Pt | null) => void; onDone: (id: number) => void; onCancel: () => void;
+  /** Modo demostración: registra el incidente en el navegador en lugar de la API. */
+  demoCreate?: (values: Record<string, unknown>) => number;
 }) {
+  const demo = !!demoCreate;
   const [f, setF] = useState({
     type: INCIDENT_TYPES[0] as string, priority: 2, source: SOURCES[0] as string, description: "",
     address: "", district: null as string | null, reporter_name: "", reporter_phone: "",
@@ -28,14 +31,14 @@ export default function NewIncident({ pick, setPick, onDone, onCancel }: {
 
   // Al hacer clic en el mapa, completa dirección y distrito del punto.
   useEffect(() => {
-    if (!pick) return;
+    if (!pick || demo) return;
     if (fromSearch.current) { fromSearch.current = false; return; }
     let dead = false;
     api(`/api/geocode?lat=${pick.lat}&lng=${pick.lng}`)
       .then(([r]) => { if (!dead && r) setF((x) => ({ ...x, address: r.address || x.address, district: r.district ?? x.district })); })
       .catch(() => {});
     return () => { dead = true; };
-  }, [pick]);
+  }, [pick, demo]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +46,12 @@ export default function NewIncident({ pick, setPick, onDone, onCancel }: {
     setBusy(true);
     setErr("");
     try {
+      if (demoCreate) {
+        const id = demoCreate({ ...f, lat: pick.lat, lng: pick.lng });
+        setPick(null);
+        onDone(id);
+        return;
+      }
       const inc = await api("/api/incidents", "POST", { ...f, lat: pick.lat, lng: pick.lng });
       setPick(null);
       onDone(inc.id);
@@ -73,10 +82,14 @@ export default function NewIncident({ pick, setPick, onDone, onCancel }: {
           <select value={f.source} onChange={(e) => set({ source: e.target.value })}>{SOURCES.map((s) => <option key={s}>{s}</option>)}</select>
         </div>
       </div>
-      <AddressSearch value={f.address} onChange={(address) => set({ address })}
-        onFound={(r) => { fromSearch.current = true; setPick({ lat: r.lat, lng: r.lng }); set({ district: r.district ?? f.district, address: f.address || r.address }); }} />
+      {demo ? (
+        <div><label>Dirección o referencia</label><input value={f.address} onChange={(e) => set({ address: e.target.value })} placeholder="Referencia simulada (opcional)" /></div>
+      ) : (
+        <AddressSearch value={f.address} onChange={(address) => set({ address })}
+          onFound={(r) => { fromSearch.current = true; setPick({ lat: r.lat, lng: r.lng }); set({ district: r.district ?? f.district, address: f.address || r.address }); }} />
+      )}
       <div className={pick ? "note" : "err"}>
-        {pick ? `Punto fijado: ${pick.lat.toFixed(5)}, ${pick.lng.toFixed(5)}. Haz clic en el mapa para corregirlo.` : "Falta ubicar: haz clic en el mapa o busca la dirección."}
+        {pick ? `Punto fijado: ${pick.lat.toFixed(5)}, ${pick.lng.toFixed(5)}. Haz clic en el mapa para corregirlo.` : demo ? "Falta ubicar: haz clic en el mapa para fijar un punto simulado." : "Falta ubicar: haz clic en el mapa o busca la dirección."}
       </div>
       <div><label>Distrito</label><DistrictSelect value={f.district} onChange={(district) => set({ district })} /></div>
       <div><label>Descripción</label><textarea value={f.description} onChange={(e) => set({ description: e.target.value })} placeholder="Qué ocurre, cuántas personas, armas, vehículos…" /></div>

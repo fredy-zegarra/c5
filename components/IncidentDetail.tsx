@@ -9,8 +9,15 @@ const EVENT_LABEL: Record<string, string> = {
   cancelado: "Incidente cancelado", nuevo: "Devuelto a la cola", nota: "Nota", editado: "Datos editados",
 };
 
-export default function IncidentDetail({ id, units, onChange, onClose }: { id: number; units?: any[]; onChange?: () => void; onClose?: () => void }) {
-  const { data: inc, refresh, error } = usePoll<any>(`/api/incidents/${id}`, 5000);
+/** En modo demostración el incidente y sus acciones vienen del navegador, no de la API. */
+export type DemoSource = { incident: any | null; act: (body: any) => void };
+
+export default function IncidentDetail({ id, units, onChange, onClose, demo }: {
+  id: number; units?: any[]; onChange?: () => void; onClose?: () => void; demo?: DemoSource;
+}) {
+  const live = usePoll<any>(demo ? null : `/api/incidents/${id}`, 5000);
+  const inc = demo ? demo.incident : live.data;
+  const error = demo ? (demo.incident ? null : "Incidente no encontrado") : live.error;
   const [err, setErr] = useState("");
   const [note, setNote] = useState("");
   const [unitId, setUnitId] = useState("");
@@ -20,8 +27,11 @@ export default function IncidentDetail({ id, units, onChange, onClose }: { id: n
   async function act(body: any) {
     setErr("");
     try {
-      await api(`/api/incidents/${id}`, "PATCH", body);
-      await refresh();
+      if (demo) demo.act(body);
+      else {
+        await api(`/api/incidents/${id}`, "PATCH", body);
+        await live.refresh();
+      }
       onChange?.();
       return true;
     } catch (e: any) {
@@ -116,6 +126,7 @@ export default function IncidentDetail({ id, units, onChange, onClose }: { id: n
           onKeyDown={async (e) => { if (e.key === "Enter" && note.trim() && (await act({ action: "note", note }))) setNote(""); }} />
         <button className="btn" disabled={!note.trim()} onClick={async () => { if (await act({ action: "note", note })) setNote(""); }}>Anotar</button>
       </div>
+      {demo && <div className="muted small">Emergencia simulada · Nada se envía a servicios reales.</div>}
     </div>
   );
 }

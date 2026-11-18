@@ -31,6 +31,7 @@ label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px
   background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer;
   white-space: nowrap; font-weight: 500;
 }
+a.btn { display: inline-block; }
 .btn:hover { border-color: var(--muted); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #1a1200; font-weight: 600; }

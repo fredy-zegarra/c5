@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePoll } from "@/lib/client";
-import { PRIORITIES, STATUS_LABEL, ago } from "@/lib/constants";
+import { CENTER, PRIORITIES, STATUS_LABEL, ago } from "@/lib/constants";
 import MapView from "@/components/MapView";
 import IncidentDetail from "@/components/IncidentDetail";
 import NewIncident from "@/components/NewIncident";
 import { Clock } from "@/components/Shell";
+import { useMe } from "@/components/ui";
+import { useDemo } from "@/lib/demo";
 
 const FILTERS: Record<string, (i: any) => boolean> = {
   Activos: (i) => i.status !== "cerrado" && i.status !== "cancelado",
@@ -24,7 +26,12 @@ function beep() {
 }
 
 export default function Operaciones() {
-  const { data, refresh, error } = usePoll<any>("/api/state", 4000);
+  const demo = useMe().role === "demo";
+  const live = usePoll<any>(demo ? null : "/api/state", 4000);
+  const sim = useDemo(demo);
+  const data = demo ? sim.data : live.data;
+  const error = demo ? sim.error : live.error;
+  const refresh = demo ? () => {} : live.refresh;
   const [sel, setSel] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [pick, setPick] = useState<{ lat: number; lng: number } | null>(null);
@@ -57,6 +64,15 @@ export default function Operaciones() {
     if (i) setFocus({ lat: i.lat, lng: i.lng });
   }
 
+  function resetDemo() {
+    if (!confirm("¿Reiniciar la demostración? Se borran los incidentes que agregaste y se restauran los de ejemplo.")) return;
+    sim.reset();
+    setSel(null);
+    setCreating(false);
+    setPick(null);
+    setFocus(null);
+  }
+
   const available = units.filter((u) => u.status === "disponible").length;
   const critical = active.filter((i) => i.priority === 1).length;
   const waiting = active.filter((i) => i.status === "nuevo").length;
@@ -65,6 +81,7 @@ export default function Operaciones() {
     <>
       <div className="top">
         <h1>Operaciones</h1>
+        {demo && <span className="badge" style={{ background: "#78350f", color: "#fde68a" }}>DEMO · solo simulación</span>}
         <div className="kpis">
           <div className="kpi"><b>{active.length}</b><span>Activos</span></div>
           <div className={`kpi ${waiting ? "alert" : ""}`}><b>{waiting}</b><span>Sin despachar</span></div>
@@ -72,14 +89,15 @@ export default function Operaciones() {
           <div className="kpi"><b>{available}/{units.length}</b><span>Unidades libres</span></div>
         </div>
         <div className="right row">
-          {error && <span className="badge nuevo">Sin conexión</span>}
+          {error && <span className="badge nuevo" title={error}>{demo ? "Sin guardado local" : "Sin conexión"}</span>}
+          {demo && <button className="btn sm" onClick={resetDemo}>Reiniciar demo</button>}
           <Clock />
         </div>
       </div>
       <div className="ops">
         <div className="list">
           <div className="listhead">
-            <button className="btn primary" style={{ width: "100%" }} onClick={() => { setSel(null); setCreating(true); }}>+ Nuevo incidente</button>
+            <button className="btn primary" style={{ width: "100%" }} onClick={() => { setSel(null); setPick(demo ? CENTER : null); setCreating(true); }}>+ Nuevo incidente</button>
             <div className="chips">
               {Object.keys(FILTERS).map((k) => (
                 <button key={k} className={`chip ${filter === k ? "on" : ""}`} onClick={() => setFilter(k)}>{k}</button>
@@ -118,9 +136,11 @@ export default function Operaciones() {
         <div className={`detail ${!creating && !sel ? "empty" : ""}`}>
           {creating ? (
             <NewIncident pick={pick} setPick={setPick} onCancel={() => { setCreating(false); setPick(null); }}
+              demoCreate={demo ? sim.create : undefined}
               onDone={(id) => { setCreating(false); refresh(); setSel(id); }} />
           ) : sel ? (
-            <IncidentDetail key={sel} id={sel} units={units} onChange={refresh} onClose={() => setSel(null)} />
+            <IncidentDetail key={sel} id={sel} units={units} onChange={refresh} onClose={() => setSel(null)}
+              demo={demo ? { incident: incidents.find((i) => i.id === sel) ?? null, act: (body) => sim.act(sel, body) } : undefined} />
           ) : (
             <div className="col">
               <h2>Sin selección</h2>

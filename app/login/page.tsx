@@ -39,6 +39,7 @@ export default function Login() {
         {err && <div className="err">{err}</div>}
         <button className="btn primary" disabled={busy}>{busy ? "Ingresando…" : "Ingresar"}</button>
         <div className="muted small">Acceso restringido a personal autorizado. Toda actividad queda registrada.</div>
+        <a className="small" href="/" style={{ textDecoration: "underline" }}>Ver la demostración sin iniciar sesión</a>
       </form>
     </div>
   );
